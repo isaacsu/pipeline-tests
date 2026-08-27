@@ -8,21 +8,20 @@ steps:
     parallelism: 5
     command:
       - "echo '~~~ :broom: Clearing local caches'"
-      - "rm -rf /var/cache/apk/*"
+      - "rm -rf /var/cache/apk/* ~/.npm"
       - 'mkdir -p "$(pwd)/.apk-cache"'
       - "echo '~~~ :package: Restoring apk cache'"
       - "buildkite-agent cache restore --names apk_cache --debug"
       - "echo '~~~ :alpine: Installing Node.js (apk)'"
       - 'apk update --cache-dir "$(pwd)/.apk-cache"'
       - 'apk add --cache-dir "$(pwd)/.apk-cache" nodejs npm'
-      - "npm cache clean --force || true"
       - "echo '~~~ :package: Saving apk cache'"
       - "buildkite-agent cache save --names apk_cache --debug"
       - "echo '~~~ :package: Restoring node_modules cache'"
       - "buildkite-agent cache restore --names node_modules --debug"
       - "echo '+++ :npm: Installing dependencies'"
-      - "npm install"
-      - "echo '+++ :mag: Listing installed packages'"
+      - "npm install --verbose"
+      - "echo '--- :mag: Listing installed packages'"
       - "npm ls --all"
       - "echo '~~~ :package: Saving node_modules cache'"
       - "buildkite-agent cache save --names node_modules --debug"
@@ -30,29 +29,27 @@ steps:
   - label: ":npm: Install (cache only apk)"
     command:
       - "echo '~~~ :broom: Clearing local caches'"
-      - "rm -rf /var/cache/apk/*"
+      - "rm -rf /var/cache/apk/* ~/.npm"
       - 'mkdir -p "$(pwd)/.apk-cache"'
       - "echo '~~~ :package: Restoring apk cache'"
       - "buildkite-agent cache restore --names apk_cache --debug"
       - "echo '~~~ :alpine: Installing Node.js (apk)'"
       - 'apk update --cache-dir "$(pwd)/.apk-cache"'
       - 'apk add --cache-dir "$(pwd)/.apk-cache" nodejs npm'
-      - "npm cache clean --force || true"
       - "echo '~~~ :package: Saving apk cache'"
       - "buildkite-agent cache save --names apk_cache --debug"
       - "echo '+++ :npm: Installing dependencies'"
-      - "npm install"
-      - "echo '+++ :mag: Listing installed packages'"
+      - "npm install --verbose"
+      - "echo '--- :mag: Listing installed packages'"
       - "npm ls --all"
 
   - label: ":npm: Install (no cache)"
     command:
       - "echo '~~~ :broom: Clearing local caches'"
-      - "rm -rf /var/cache/apk/*"
+      - "rm -rf /var/cache/apk/* ~/.npm"
       - "echo '~~~ :alpine: Installing Node.js (apk)'"
       - "apk add --no-cache nodejs npm"
-      - "npm cache clean --force || true"
       - "echo '+++ :npm: Installing dependencies'"
-      - "npm install"
-      - "echo '+++ :mag: Listing installed packages'"
+      - "npm install --verbose"
+      - "echo '--- :mag: Listing installed packages'"
       - "npm ls --all"
