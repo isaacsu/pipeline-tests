@@ -1,0 +1,9 @@
+caches:
+  - name: node_modules
+    cache_key:
+      - node_modules
+      - { agent: os }
+      - { agent: arch }
+      - { checksum: package-lock.json }
+    target_paths:
+      - node_modules

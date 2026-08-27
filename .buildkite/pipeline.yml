@@ -1,3 +1,11 @@
 steps:
   - label: "Hello World"
     command: echo "Hello, world!"
+
+  - label: ":npm: Install"
+    command:
+      - "apk add --no-cache nodejs npm"
+      - "buildkite-agent cache restore"
+      - "npm install"
+      - "npm ls --all"
+      - "buildkite-agent cache save"
