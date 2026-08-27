@@ -1,3 +1,14 @@
 steps:
-  - label: "Hello World"
-    command: echo "Hello, world!"
+  - label: "Go Version"
+    command: go version
+    parallelism: 3
+    plugins:
+      - docker#v5.11.0:
+          image: "golang:latest"
+
+  - label: "Node Version"
+    command: node --version
+    parallelism: 3
+    plugins:
+      - docker#v5.11.0:
+          image: "node:latest"
