@@ -27,14 +27,13 @@ steps:
       - "echo '~~~ :package: Restoring node_modules cache'"
       - "buildkite-agent cache restore --names node_modules --debug"
 
-      - "echo '+++ :npm: Installing dependencies'"
+      - "echo '~~~ :npm: Installing dependencies'"
       - "npm install --verbose"
-
-      - "echo '--- :mag: Listing installed packages'"
-      - "npm ls --all"
 
       - "echo '~~~ :package: Saving node_modules cache'"
       - "buildkite-agent cache save --names node_modules --debug"
+
+      - "echo '--- ✅ '"
 
   - label: ":npm: Install (cache only apk)"
     command:
@@ -55,11 +54,10 @@ steps:
       - "echo '~~~ :package: Saving apk cache'"
       - "buildkite-agent cache save --names apk_cache --debug"
 
-      - "echo '+++ :npm: Installing dependencies'"
+      - "echo '~~~ :npm: Installing dependencies'"
       - "npm install --verbose"
 
-      - "echo '--- :mag: Listing installed packages'"
-      - "npm ls --all"
+      - "echo '--- ✅ '"
 
   - label: ":npm: Install (no cache)"
     command:
@@ -72,8 +70,7 @@ steps:
       - "echo '~~~ :alpine: Installing Node.js (apk)'"
       - "apk add --no-cache nodejs npm"
 
-      - "echo '+++ :npm: Installing dependencies'"
+      - "echo '~~~ :npm: Installing dependencies'"
       - "npm install --verbose"
 
-      - "echo '--- :mag: Listing installed packages'"
-      - "npm ls --all"
+      - "echo '--- ✅ '"
