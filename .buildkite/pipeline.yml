@@ -4,8 +4,12 @@ steps:
 
   - label: ":npm: Install"
     command:
-      - "apk add --no-cache nodejs npm"
-      - "buildkite-agent cache restore"
+      - "mkdir -p \"$(pwd)/.apk-cache\""
+      - "buildkite-agent cache restore --names apk_cache --debug"
+      - "apk update --cache-dir \"$(pwd)/.apk-cache\""
+      - "apk add --cache-dir \"$(pwd)/.apk-cache\" nodejs npm"
+      - "buildkite-agent cache save --names apk_cache --debug"
+      - "buildkite-agent cache restore --names node_modules --debug"
       - "npm install"
       - "npm ls --all"
-      - "buildkite-agent cache save"
+      - "buildkite-agent cache save --names node_modules --debug"

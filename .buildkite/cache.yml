@@ -1,4 +1,12 @@
 caches:
+  - name: apk_cache
+    cache_key:
+      - apk-cache
+      - { agent: os }
+      - { agent: arch }
+    target_paths:
+      - .apk-cache
+
   - name: node_modules
     cache_key:
       - node_modules
