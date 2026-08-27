@@ -5,6 +5,7 @@ steps:
   - wait: ~
 
   - label: ":npm: Install (cache all)"
+    parallelism: 5
     command:
       - "echo '~~~ :broom: Clearing local caches'"
       - "rm -rf /var/cache/apk/*"
