@@ -6,12 +6,15 @@ steps:
 
   - label: ":npm: Install (cache all)"
     command:
+      - "echo '~~~ :broom: Clearing local caches'"
+      - "rm -rf /var/cache/apk/*"
       - 'mkdir -p "$(pwd)/.apk-cache"'
       - "echo '~~~ :package: Restoring apk cache'"
       - "buildkite-agent cache restore --names apk_cache --debug"
       - "echo '~~~ :alpine: Installing Node.js (apk)'"
       - 'apk update --cache-dir "$(pwd)/.apk-cache"'
       - 'apk add --cache-dir "$(pwd)/.apk-cache" nodejs npm'
+      - "npm cache clean --force || true"
       - "echo '~~~ :package: Saving apk cache'"
       - "buildkite-agent cache save --names apk_cache --debug"
       - "echo '~~~ :package: Restoring node_modules cache'"
@@ -25,12 +28,15 @@ steps:
 
   - label: ":npm: Install (cache only apk)"
     command:
+      - "echo '~~~ :broom: Clearing local caches'"
+      - "rm -rf /var/cache/apk/*"
       - 'mkdir -p "$(pwd)/.apk-cache"'
       - "echo '~~~ :package: Restoring apk cache'"
       - "buildkite-agent cache restore --names apk_cache --debug"
       - "echo '~~~ :alpine: Installing Node.js (apk)'"
       - 'apk update --cache-dir "$(pwd)/.apk-cache"'
       - 'apk add --cache-dir "$(pwd)/.apk-cache" nodejs npm'
+      - "npm cache clean --force || true"
       - "echo '~~~ :package: Saving apk cache'"
       - "buildkite-agent cache save --names apk_cache --debug"
       - "echo '+++ :npm: Installing dependencies'"
@@ -40,8 +46,11 @@ steps:
 
   - label: ":npm: Install (no cache)"
     command:
+      - "echo '~~~ :broom: Clearing local caches'"
+      - "rm -rf /var/cache/apk/*"
       - "echo '~~~ :alpine: Installing Node.js (apk)'"
       - "apk add --no-cache nodejs npm"
+      - "npm cache clean --force || true"
       - "echo '+++ :npm: Installing dependencies'"
       - "npm install"
       - "echo '+++ :mag: Listing installed packages'"
