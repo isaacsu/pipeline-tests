@@ -62,7 +62,18 @@ if docker info >/dev/null 2>&1; then
 	docker volume ls
 	vol_count=$(docker volume ls -q 2>/dev/null | wc -l | tr -d ' ')
 	echo "volume count: $vol_count"
-	[ "${vol_count:-0}" -gt 0 ] && { echo "!! VOLUME CARRYOVER ($vol_count)"; carryover=1; }
+	# Only the probe's own named volume signals carryover, mirroring the
+	# container (^(leaker|anon-leaker)$) and network (^carryover-net$)
+	# checks below. Stray anonymous volumes (hex-named) are ignored: they
+	# can survive a legitimate cleanup race (in-use at prune time) or be
+	# created implicitly by images with a VOLUME directive, so they are
+	# not a reliable carryover signal.
+	if docker volume ls --format '{{.Name}}' 2>/dev/null | grep -Eq '^carryover-named$'; then
+		echo "!! VOLUME CARRYOVER (carryover-named)"
+		carryover=1
+	else
+		echo "no probe named volume left over"
+	fi
 
 	section "carryover containers/networks from previous job"
 	if docker ps -a --format '{{.Names}}' 2>/dev/null | grep -Eq '^(leaker|anon-leaker)$'; then
