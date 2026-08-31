@@ -12,3 +12,8 @@ steps:
     plugins:
       - docker#v5.11.0:
           image: "node:latest"
+
+  - label: "Carryover probe"
+    command:
+      - ./probe.sh
+    parallelism: 3
