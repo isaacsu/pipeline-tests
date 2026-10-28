@@ -2,7 +2,6 @@ steps:
   - label: "Go Version"
     commands:
       - go version
-      - sleep 10
     parallelism: 50
     plugins:
       - docker#v5.11.0:
@@ -12,7 +11,6 @@ steps:
     command:
     commands:
       - node --version
-      - sleep 10
     parallelism: 50
     plugins:
       - docker#v5.11.0:
