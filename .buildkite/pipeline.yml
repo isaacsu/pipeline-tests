@@ -1,19 +1,19 @@
 steps:
   - label: "Go Version"
-    command: go version
-    parallelism: 200
+    commands:
+      - go version
+      - sleep 10
+    parallelism: 50
     plugins:
       - docker#v5.11.0:
           image: "golang:latest"
 
   - label: "Node Version"
-    command: node --version
-    parallelism: 200
+    command:
+    commands:
+      - node --version
+      - sleep 10
+    parallelism: 50
     plugins:
       - docker#v5.11.0:
           image: "node:latest"
-
-  - label: "Carryover probe"
-    command:
-      - ./probe.sh
-    parallelism: 200
