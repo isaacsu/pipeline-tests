@@ -1,28 +1,56 @@
-x-go:     &go     { parallelism: 3, command: "go version",       plugins: [{ docker#v5.11.0: { image: "golang:latest" } }] }
-x-node:   &node   { parallelism: 3, command: "node --version",   plugins: [{ docker#v5.11.0: { image: "node:latest" } }] }
-x-python: &python { parallelism: 3, command: "python --version", plugins: [{ docker#v5.11.0: { image: "python:latest" } }] }
-x-ruby:   &ruby   { parallelism: 3, command: "ruby --version",   plugins: [{ docker#v5.11.0: { image: "ruby:latest" } }] }
-x-rust:   &rust   { parallelism: 3, command: "rustc --version",  plugins: [{ docker#v5.11.0: { image: "rust:latest" } }] }
-x-java:   &java   { parallelism: 3, command: "java --version",   plugins: [{ docker#v5.11.0: { image: "eclipse-temurin:latest" } }] }
-x-php:    &php    { parallelism: 3, command: "php --version",    plugins: [{ docker#v5.11.0: { image: "php:latest" } }] }
+x-go:     &go     { command: "go version",       plugins: [{ docker#v5.11.0: { image: "golang:latest" } }] }
+x-node:   &node   { command: "node --version",   plugins: [{ docker#v5.11.0: { image: "node:latest" } }] }
+x-python: &python { command: "python --version", plugins: [{ docker#v5.11.0: { image: "python:latest" } }] }
+x-ruby:   &ruby   { command: "ruby --version",   plugins: [{ docker#v5.11.0: { image: "ruby:latest" } }] }
+x-rust:   &rust   { command: "rustc --version",  plugins: [{ docker#v5.11.0: { image: "rust:latest" } }] }
+x-java:   &java   { command: "java --version",   plugins: [{ docker#v5.11.0: { image: "eclipse-temurin:latest" } }] }
+x-php:    &php    { command: "php --version",    plugins: [{ docker#v5.11.0: { image: "php:latest" } }] }
 
 x-default-steps: &default_steps
-  - { label: ":golang: Go",     agents: { queue: default }, <<: *go }
-  - { label: ":nodejs: Node",   agents: { queue: default }, <<: *node }
-  - { label: ":python: Python", agents: { queue: default }, <<: *python }
-  - { label: ":ruby: Ruby",     agents: { queue: default }, <<: *ruby }
-  - { label: ":rust: Rust",     agents: { queue: default }, <<: *rust }
-  - { label: ":java: Java",     agents: { queue: default }, <<: *java }
-  - { label: ":php: PHP",       agents: { queue: default }, <<: *php }
+  - { label: ":golang: Go 1",     agents: { queue: default }, <<: *go }
+  - { label: ":golang: Go 2",     agents: { queue: default }, <<: *go }
+  - { label: ":golang: Go 3",     agents: { queue: default }, <<: *go }
+  - { label: ":nodejs: Node 1",   agents: { queue: default }, <<: *node }
+  - { label: ":nodejs: Node 2",   agents: { queue: default }, <<: *node }
+  - { label: ":nodejs: Node 3",   agents: { queue: default }, <<: *node }
+  - { label: ":python: Python 1", agents: { queue: default }, <<: *python }
+  - { label: ":python: Python 2", agents: { queue: default }, <<: *python }
+  - { label: ":python: Python 3", agents: { queue: default }, <<: *python }
+  - { label: ":ruby: Ruby 1",     agents: { queue: default }, <<: *ruby }
+  - { label: ":ruby: Ruby 2",     agents: { queue: default }, <<: *ruby }
+  - { label: ":ruby: Ruby 3",     agents: { queue: default }, <<: *ruby }
+  - { label: ":rust: Rust 1",     agents: { queue: default }, <<: *rust }
+  - { label: ":rust: Rust 2",     agents: { queue: default }, <<: *rust }
+  - { label: ":rust: Rust 3",     agents: { queue: default }, <<: *rust }
+  - { label: ":java: Java 1",     agents: { queue: default }, <<: *java }
+  - { label: ":java: Java 2",     agents: { queue: default }, <<: *java }
+  - { label: ":java: Java 3",     agents: { queue: default }, <<: *java }
+  - { label: ":php: PHP 1",       agents: { queue: default }, <<: *php }
+  - { label: ":php: PHP 2",       agents: { queue: default }, <<: *php }
+  - { label: ":php: PHP 3",       agents: { queue: default }, <<: *php }
 
 x-unaccelerated-steps: &unaccelerated_steps
-  - { label: ":golang: Go",     agents: { queue: unaccelerated }, <<: *go }
-  - { label: ":nodejs: Node",   agents: { queue: unaccelerated }, <<: *node }
-  - { label: ":python: Python", agents: { queue: unaccelerated }, <<: *python }
-  - { label: ":ruby: Ruby",     agents: { queue: unaccelerated }, <<: *ruby }
-  - { label: ":rust: Rust",     agents: { queue: unaccelerated }, <<: *rust }
-  - { label: ":java: Java",     agents: { queue: unaccelerated }, <<: *java }
-  - { label: ":php: PHP",       agents: { queue: unaccelerated }, <<: *php }
+  - { label: ":golang: Go 1",     agents: { queue: unaccelerated }, <<: *go }
+  - { label: ":golang: Go 2",     agents: { queue: unaccelerated }, <<: *go }
+  - { label: ":golang: Go 3",     agents: { queue: unaccelerated }, <<: *go }
+  - { label: ":nodejs: Node 1",   agents: { queue: unaccelerated }, <<: *node }
+  - { label: ":nodejs: Node 2",   agents: { queue: unaccelerated }, <<: *node }
+  - { label: ":nodejs: Node 3",   agents: { queue: unaccelerated }, <<: *node }
+  - { label: ":python: Python 1", agents: { queue: unaccelerated }, <<: *python }
+  - { label: ":python: Python 2", agents: { queue: unaccelerated }, <<: *python }
+  - { label: ":python: Python 3", agents: { queue: unaccelerated }, <<: *python }
+  - { label: ":ruby: Ruby 1",     agents: { queue: unaccelerated }, <<: *ruby }
+  - { label: ":ruby: Ruby 2",     agents: { queue: unaccelerated }, <<: *ruby }
+  - { label: ":ruby: Ruby 3",     agents: { queue: unaccelerated }, <<: *ruby }
+  - { label: ":rust: Rust 1",     agents: { queue: unaccelerated }, <<: *rust }
+  - { label: ":rust: Rust 2",     agents: { queue: unaccelerated }, <<: *rust }
+  - { label: ":rust: Rust 3",     agents: { queue: unaccelerated }, <<: *rust }
+  - { label: ":java: Java 1",     agents: { queue: unaccelerated }, <<: *java }
+  - { label: ":java: Java 2",     agents: { queue: unaccelerated }, <<: *java }
+  - { label: ":java: Java 3",     agents: { queue: unaccelerated }, <<: *java }
+  - { label: ":php: PHP 1",       agents: { queue: unaccelerated }, <<: *php }
+  - { label: ":php: PHP 2",       agents: { queue: unaccelerated }, <<: *php }
+  - { label: ":php: PHP 3",       agents: { queue: unaccelerated }, <<: *php }
 
 steps:
   - { group: ":rocket: default (round 1)",       key: default-1,       steps: *default_steps }
