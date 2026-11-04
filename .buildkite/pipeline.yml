@@ -1,17 +1,30 @@
-steps:
-  - label: "Go Version"
-    commands:
-      - go version
-    parallelism: 50
-    plugins:
-      - docker#v5.11.0:
-          image: "golang:latest"
+x-go:     &go     { command: "go version",       plugins: [{ docker#v5.11.0: { image: "golang:latest" } }] }
+x-node:   &node   { command: "node --version",   plugins: [{ docker#v5.11.0: { image: "node:latest" } }] }
+x-python: &python { command: "python --version", plugins: [{ docker#v5.11.0: { image: "python:latest" } }] }
+x-ruby:   &ruby   { command: "ruby --version",   plugins: [{ docker#v5.11.0: { image: "ruby:latest" } }] }
+x-rust:   &rust   { command: "rustc --version",  plugins: [{ docker#v5.11.0: { image: "rust:latest" } }] }
+x-java:   &java   { command: "java --version",   plugins: [{ docker#v5.11.0: { image: "eclipse-temurin:latest" } }] }
+x-php:    &php    { command: "php --version",    plugins: [{ docker#v5.11.0: { image: "php:latest" } }] }
 
-  - label: "Node Version"
-    command:
-    commands:
-      - node --version
-    parallelism: 50
-    plugins:
-      - docker#v5.11.0:
-          image: "node:latest"
+steps:
+  - group: ":rocket: default"
+    key: default
+    steps:
+      - { label: ":golang: Go",     agents: { queue: default }, <<: *go }
+      - { label: ":nodejs: Node",   agents: { queue: default }, <<: *node }
+      - { label: ":python: Python", agents: { queue: default }, <<: *python }
+      - { label: ":ruby: Ruby",     agents: { queue: default }, <<: *ruby }
+      - { label: ":rust: Rust",     agents: { queue: default }, <<: *rust }
+      - { label: ":java: Java",     agents: { queue: default }, <<: *java }
+      - { label: ":php: PHP",       agents: { queue: default }, <<: *php }
+
+  - group: ":turtle: unaccelerated"
+    key: unaccelerated
+    steps:
+      - { label: ":golang: Go",     agents: { queue: unaccelerated }, <<: *go }
+      - { label: ":nodejs: Node",   agents: { queue: unaccelerated }, <<: *node }
+      - { label: ":python: Python", agents: { queue: unaccelerated }, <<: *python }
+      - { label: ":ruby: Ruby",     agents: { queue: unaccelerated }, <<: *ruby }
+      - { label: ":rust: Rust",     agents: { queue: unaccelerated }, <<: *rust }
+      - { label: ":java: Java",     agents: { queue: unaccelerated }, <<: *java }
+      - { label: ":php: PHP",       agents: { queue: unaccelerated }, <<: *php }
