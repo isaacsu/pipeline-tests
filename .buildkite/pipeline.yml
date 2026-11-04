@@ -1,30 +1,39 @@
-x-go:     &go     { command: "go version",       plugins: [{ docker#v5.11.0: { image: "golang:latest" } }] }
-x-node:   &node   { command: "node --version",   plugins: [{ docker#v5.11.0: { image: "node:latest" } }] }
-x-python: &python { command: "python --version", plugins: [{ docker#v5.11.0: { image: "python:latest" } }] }
-x-ruby:   &ruby   { command: "ruby --version",   plugins: [{ docker#v5.11.0: { image: "ruby:latest" } }] }
-x-rust:   &rust   { command: "rustc --version",  plugins: [{ docker#v5.11.0: { image: "rust:latest" } }] }
-x-java:   &java   { command: "java --version",   plugins: [{ docker#v5.11.0: { image: "eclipse-temurin:latest" } }] }
-x-php:    &php    { command: "php --version",    plugins: [{ docker#v5.11.0: { image: "php:latest" } }] }
+x-go:     &go     { parallelism: 3, command: "go version",       plugins: [{ docker#v5.11.0: { image: "golang:latest" } }] }
+x-node:   &node   { parallelism: 3, command: "node --version",   plugins: [{ docker#v5.11.0: { image: "node:latest" } }] }
+x-python: &python { parallelism: 3, command: "python --version", plugins: [{ docker#v5.11.0: { image: "python:latest" } }] }
+x-ruby:   &ruby   { parallelism: 3, command: "ruby --version",   plugins: [{ docker#v5.11.0: { image: "ruby:latest" } }] }
+x-rust:   &rust   { parallelism: 3, command: "rustc --version",  plugins: [{ docker#v5.11.0: { image: "rust:latest" } }] }
+x-java:   &java   { parallelism: 3, command: "java --version",   plugins: [{ docker#v5.11.0: { image: "eclipse-temurin:latest" } }] }
+x-php:    &php    { parallelism: 3, command: "php --version",    plugins: [{ docker#v5.11.0: { image: "php:latest" } }] }
+
+x-default-steps: &default_steps
+  - { label: ":golang: Go",     agents: { queue: default }, <<: *go }
+  - { label: ":nodejs: Node",   agents: { queue: default }, <<: *node }
+  - { label: ":python: Python", agents: { queue: default }, <<: *python }
+  - { label: ":ruby: Ruby",     agents: { queue: default }, <<: *ruby }
+  - { label: ":rust: Rust",     agents: { queue: default }, <<: *rust }
+  - { label: ":java: Java",     agents: { queue: default }, <<: *java }
+  - { label: ":php: PHP",       agents: { queue: default }, <<: *php }
+
+x-unaccelerated-steps: &unaccelerated_steps
+  - { label: ":golang: Go",     agents: { queue: unaccelerated }, <<: *go }
+  - { label: ":nodejs: Node",   agents: { queue: unaccelerated }, <<: *node }
+  - { label: ":python: Python", agents: { queue: unaccelerated }, <<: *python }
+  - { label: ":ruby: Ruby",     agents: { queue: unaccelerated }, <<: *ruby }
+  - { label: ":rust: Rust",     agents: { queue: unaccelerated }, <<: *rust }
+  - { label: ":java: Java",     agents: { queue: unaccelerated }, <<: *java }
+  - { label: ":php: PHP",       agents: { queue: unaccelerated }, <<: *php }
 
 steps:
-  - group: ":rocket: default"
-    key: default
-    steps:
-      - { label: ":golang: Go",     agents: { queue: default }, <<: *go }
-      - { label: ":nodejs: Node",   agents: { queue: default }, <<: *node }
-      - { label: ":python: Python", agents: { queue: default }, <<: *python }
-      - { label: ":ruby: Ruby",     agents: { queue: default }, <<: *ruby }
-      - { label: ":rust: Rust",     agents: { queue: default }, <<: *rust }
-      - { label: ":java: Java",     agents: { queue: default }, <<: *java }
-      - { label: ":php: PHP",       agents: { queue: default }, <<: *php }
+  - { group: ":rocket: default (round 1)",       key: default-1,       steps: *default_steps }
+  - { group: ":turtle: unaccelerated (round 1)", key: unaccelerated-1, steps: *unaccelerated_steps }
 
-  - group: ":turtle: unaccelerated"
-    key: unaccelerated
-    steps:
-      - { label: ":golang: Go",     agents: { queue: unaccelerated }, <<: *go }
-      - { label: ":nodejs: Node",   agents: { queue: unaccelerated }, <<: *node }
-      - { label: ":python: Python", agents: { queue: unaccelerated }, <<: *python }
-      - { label: ":ruby: Ruby",     agents: { queue: unaccelerated }, <<: *ruby }
-      - { label: ":rust: Rust",     agents: { queue: unaccelerated }, <<: *rust }
-      - { label: ":java: Java",     agents: { queue: unaccelerated }, <<: *java }
-      - { label: ":php: PHP",       agents: { queue: unaccelerated }, <<: *php }
+  - block: ":arrow_forward: Start round 2"
+
+  - { group: ":rocket: default (round 2)",       key: default-2,       steps: *default_steps }
+  - { group: ":turtle: unaccelerated (round 2)", key: unaccelerated-2, steps: *unaccelerated_steps }
+
+  - block: ":arrow_forward: Start round 3"
+
+  - { group: ":rocket: default (round 3)",       key: default-3,       steps: *default_steps }
+  - { group: ":turtle: unaccelerated (round 3)", key: unaccelerated-3, steps: *unaccelerated_steps }
