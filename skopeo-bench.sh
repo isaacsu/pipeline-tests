@@ -60,7 +60,7 @@ if [ -n "$proxy" ]; then
 	set -- "$@" \
 		-e "HTTPS_PROXY=$proxy" -e "https_proxy=$proxy" \
 		-e "HTTP_PROXY=$proxy" -e "http_proxy=$proxy" \
-		-e "SSL_CERT_FILE=/tmp/ca-bundle.crt"
+		-e "SSL_CERT_DIR=/tmp/certs:/etc/ssl/certs:/etc/pki/tls/certs"
 fi
 docker run -d "$@" "$SKOPEO_IMAGE" infinity >/dev/null
 echo "skopeo: $(sk skopeo --version)"
@@ -78,15 +78,15 @@ if [ -n "$proxy" ]; then
 		echo "error: $ca_url did not return a PEM certificate" >&2
 		exit 1
 	fi
-	docker cp "$tmp/proxy-ca.crt" "$ctr:/tmp/proxy-ca.crt"
-	sk sh -c 'cat /etc/pki/tls/certs/ca-bundle.crt /tmp/proxy-ca.crt >/tmp/ca-bundle.crt'
+	sk mkdir -p /tmp/certs
+	docker cp -q "$tmp/proxy-ca.crt" "$ctr:/tmp/certs/proxy-ca.crt"
 	echo "trusting proxy CA from $ca_url"
 fi
 
 auth="${DOCKER_CONFIG:-$HOME/.docker}/config.json"
 set --
 if [ -f "$auth" ]; then
-	docker cp "$auth" "$ctr:/tmp/auth.json"
+	docker cp -q "$auth" "$ctr:/tmp/auth.json"
 	set -- --authfile /tmp/auth.json
 	echo "using registry credentials from $auth"
 	if grep -Eq '"(credsStore|credHelpers)"' "$auth"; then
