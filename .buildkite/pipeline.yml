@@ -1,6 +1,8 @@
+x-proxy: &proxy "http://buildkite-runner-stack-buildkite-ope-oci-accelerator.buildkite-runner-stack.svc:3128"
+
 x-round: &round
-  - { label: ":rocket: default",       agents: { queue: default },       command: ./pull-bench.sh }
-  - { label: ":turtle: unaccelerated", agents: { queue: unaccelerated }, command: ./pull-bench.sh }
+  - { label: ":rocket: default",       agents: { queue: default },       env: { ACCELERATOR_PROXY: *proxy }, command: ./skopeo-bench.sh }
+  - { label: ":turtle: unaccelerated", agents: { queue: unaccelerated },                                   command: ./skopeo-bench.sh }
 
 steps:
   - { group: ":one: Round 1",   key: round-1, steps: *round }
@@ -9,4 +11,4 @@ steps:
   - block: ":arrow_forward: Start round 3"
   - { group: ":three: Round 3", key: round-3, steps: *round }
   - wait
-  - { label: ":bar_chart: results", agents: { queue: default }, command: ./collect-results.sh }
+  - { label: ":bar_chart: results", agents: { queue: default }, command: ./collect-results.sh skopeo }

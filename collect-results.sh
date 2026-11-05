@@ -1,24 +1,46 @@
 #!/bin/sh
-# Aggregates the results-*.csv artifacts written by pull-bench.sh into a single
-# results.csv artifact and a summary annotation comparing the default and
-# unaccelerated queues. Rounds are inferred per queue from job start order.
+# Aggregates per-job result CSVs into a single CSV artifact and a summary
+# annotation comparing the default and unaccelerated queues. Rounds are
+# inferred per queue from job start order.
+#
+# Usage: collect-results.sh [docker|skopeo]
+#   docker (default): results-*.csv from pull-bench.sh
+#   skopeo:           skopeo-results-*.csv from skopeo-bench.sh
 
 set -eu
 
-dir=$(mktemp -d)
-buildkite-agent artifact download "results-*.csv" "$dir"
+mode="${1:-docker}"
+case "$mode" in
+docker)
+	prefix="results"
+	title=":whale: Docker pull: default vs unaccelerated"
+	note="local image cache cleared before each pull. MB/s is uncompressed image size ÷ pull time."
+	;;
+skopeo)
+	prefix="skopeo-results"
+	title=":package: Skopeo pull: default (accelerator) vs unaccelerated"
+	note="\`skopeo copy\` to a fresh \`dir:\` each pull, no Docker daemon involved. MB/s is compressed (transferred) size ÷ pull time."
+	;;
+*)
+	echo "usage: $0 [docker|skopeo]" >&2
+	exit 2
+	;;
+esac
 
-set -- $(find "$dir" -name 'results-*.csv' | sort)
+dir=$(mktemp -d)
+buildkite-agent artifact download "$prefix-*.csv" "$dir"
+
+set -- $(find "$dir" -name "$prefix-*.csv" | sort)
 if [ $# -eq 0 ]; then
-	echo "no results-*.csv artifacts found" >&2
+	echo "no $prefix-*.csv artifacts found" >&2
 	exit 1
 fi
 
-head -n 1 "$1" >results.csv
-for f in "$@"; do tail -n +2 "$f"; done >>results.csv
-buildkite-agent artifact upload results.csv
+head -n 1 "$1" >"$prefix.csv"
+for f in "$@"; do tail -n +2 "$f"; done >>"$prefix.csv"
+buildkite-agent artifact upload "$prefix.csv"
 
-awk '
+awk -v title="$title" -v note="$note" '
 BEGIN { FS = ","; A = "default"; B = "unaccelerated" }
 NR == 1 { next }
 {
@@ -84,9 +106,9 @@ END {
 	rounds = (nj[A] > nj[B]) ? nj[A] : nj[B]
 	for (i = 1; i <= nimg; i++) totsize += isize[imgs[i]]
 
-	print "### :whale: Docker pull: default vs unaccelerated"
+	print "### " title
 	print ""
-	printf "Median of %d default and %d unaccelerated runs; local image cache cleared before each pull. Speedup = unaccelerated ÷ default. MB/s is uncompressed image size ÷ pull time.\n", nj[A], nj[B]
+	printf "Median of %d default and %d unaccelerated runs; %s Speedup = unaccelerated ÷ default.\n", nj[A], nj[B], note
 	print ""
 	print "| Image | Size | default | unaccelerated | Speedup | default MB/s | unaccelerated MB/s |"
 	print "|---|--:|--:|--:|--:|--:|--:|"
@@ -123,7 +145,7 @@ END {
 		print line
 	}
 }
-' results.csv >summary.md
+' "$prefix.csv" >"summary-$mode.md"
 
-cat summary.md
-buildkite-agent annotate --style info --context pull-bench <summary.md
+cat "summary-$mode.md"
+buildkite-agent annotate --style info --context "$mode-pull-bench" <"summary-$mode.md"
