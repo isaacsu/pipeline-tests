@@ -5,10 +5,24 @@ x-round: &round
   - { label: ":turtle: unaccelerated", agents: { queue: unaccelerated },                                   command: ./skopeo-bench.sh }
 
 steps:
-  - { group: ":one: Round 1",   key: round-1, steps: *round }
-  - block: ":arrow_forward: Start round 2"
-  - { group: ":two: Round 2",   key: round-2, steps: *round }
-  - block: ":arrow_forward: Start round 3"
-  - { group: ":three: Round 3", key: round-3, steps: *round }
+  - { group: ":one: Round 1",          key: round-1,  steps: *round }
+  - wait
+  - { group: ":two: Round 2",          key: round-2,  steps: *round }
+  - wait
+  - { group: ":three: Round 3",        key: round-3,  steps: *round }
+  - wait
+  - { group: ":four: Round 4",         key: round-4,  steps: *round }
+  - wait
+  - { group: ":five: Round 5",         key: round-5,  steps: *round }
+  - wait
+  - { group: ":six: Round 6",          key: round-6,  steps: *round }
+  - wait
+  - { group: ":seven: Round 7",        key: round-7,  steps: *round }
+  - wait
+  - { group: ":eight: Round 8",        key: round-8,  steps: *round }
+  - wait
+  - { group: ":nine: Round 9",         key: round-9,  steps: *round }
+  - wait
+  - { group: ":keycap_ten: Round 10",  key: round-10, steps: *round }
   - wait
   - { label: ":bar_chart: results", agents: { queue: default }, command: ./collect-results.sh skopeo }
