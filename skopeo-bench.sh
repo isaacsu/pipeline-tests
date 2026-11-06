@@ -1,6 +1,7 @@
 #!/bin/sh
 # Skopeo pull benchmark: times `skopeo copy` of each image from Docker Hub into
 # a scratch dir: on this agent's queue, bypassing the Docker daemon's image store.
+# Each image is pulled ATTEMPTS times in a row, from an empty dir each time.
 #
 # When ACCELERATOR_PROXY is set, skopeo is routed through that HTTPS
 # pull-through caching proxy, trusting the CA it serves at /ca.crt. Otherwise
@@ -14,7 +15,16 @@
 
 set -eu
 
-IMAGES="golang:latest node:latest python:latest ruby:latest rust:latest eclipse-temurin:latest php:latest"
+IMAGES="
+gitlab/gitlab-ce:19.5.3-ce.0
+nvidia/cuda:12.6.3-runtime-ubuntu24.04
+continuumio/anaconda3:2024.10-1
+swift:6.4.2-bookworm
+sonarqube:26.11.0.134175-community
+selenium/standalone-chrome:157.0-20261101
+"
+# Pulls of each image, back to back, per job.
+ATTEMPTS=3
 SKOPEO_IMAGE="quay.io/skopeo/stable:v1.22.3"
 
 queue="${BUILDKITE_AGENT_META_DATA_QUEUE:-unknown}"
@@ -97,25 +107,30 @@ else
 fi
 
 job_start=$(now_ms)
-echo "queue,job_id,agent,job_start_ms,image,digest,ms,bytes" >"$out"
+echo "queue,job_id,agent,job_start_ms,image,digest,ms,bytes,attempt" >"$out"
 
 section "pulls"
-printf '%-24s %10s %10s\n' image seconds MB
+printf '%-44s %7s %10s %10s\n' image attempt seconds MB
 for img in $IMAGES; do
-	sk rm -rf /tmp/out
+	attempt=0
+	while [ "$attempt" -lt "$ATTEMPTS" ]; do
+		attempt=$((attempt + 1))
+		sk rm -rf /tmp/out
 
-	t0=$(now_ms)
-	sk skopeo copy -q "$@" --override-os linux --override-arch "$arch" \
-		"docker://docker.io/library/$img" dir:/tmp/out >/dev/null
-	t1=$(now_ms)
+		t0=$(now_ms)
+		sk skopeo copy -q "$@" --override-os linux --override-arch "$arch" \
+			"docker://docker.io/$img" dir:/tmp/out >/dev/null
+		t1=$(now_ms)
 
-	ms=$((t1 - t0))
-	digest="sha256:$(sk sha256sum /tmp/out/manifest.json | cut -d' ' -f1)"
-	bytes=$(sk sh -c 'cat /tmp/out/[0-9a-f]* | wc -c' | tr -d ' ')
+		ms=$((t1 - t0))
+		digest="sha256:$(sk sha256sum /tmp/out/manifest.json | cut -d' ' -f1)"
+		bytes=$(sk sh -c 'cat /tmp/out/[0-9a-f]* | wc -c' | tr -d ' ')
 
-	echo "$queue,$job,$agent,$job_start,$img,$digest,$ms,$bytes" >>"$out"
-	awk -v i="$img" -v ms="$ms" -v b="$bytes" 'BEGIN { printf "%-24s %10.2f %10.0f\n", i, ms / 1000, b / 1e6 }'
+		echo "$queue,$job,$agent,$job_start,$img,$digest,$ms,$bytes,$attempt" >>"$out"
+		awk -v i="$img" -v a="$attempt" -v ms="$ms" -v b="$bytes" 'BEGIN { printf "%-44s %7d %10.2f %10.0f\n", i, a, ms / 1000, b / 1e6 }'
+	done
 done
+sk rm -rf /tmp/out
 
 if command -v buildkite-agent >/dev/null 2>&1; then
 	buildkite-agent artifact upload "$out"

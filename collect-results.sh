@@ -14,7 +14,7 @@ case "$mode" in
 docker)
 	prefix="results"
 	title=":whale: Docker pull: default vs unaccelerated"
-	note="local image cache cleared before each pull. MB/s is uncompressed image size ÷ pull time."
+	note="Local image cache cleared before each pull. MB/s is uncompressed image size ÷ pull time."
 	;;
 skopeo)
 	prefix="skopeo-results"
@@ -41,15 +41,17 @@ for f in "$@"; do tail -n +2 "$f"; done >>"$prefix.csv"
 buildkite-agent artifact upload "$prefix.csv"
 
 awk -v title="$title" -v note="$note" '
-BEGIN { FS = ","; A = "default"; B = "unaccelerated" }
+BEGIN { FS = ","; A = "default"; B = "unaccelerated"; na = 1 }
 NR == 1 { next }
 {
 	q = $1; j = $2; s = $4; img = $5; d = $6; ms = $7; by = $8
+	a = (NF >= 9 && $9 != "") ? $9 + 0 : 1
+	if (a > na) na = a
 	if (!((q, j) in js)) { js[q, j] = s; nj[q]++; jobs[q, nj[q]] = j }
 	if (!(img in isize)) { nimg++; imgs[nimg] = img }
 	isize[img] = by
-	t[q, j, img] = ms
-	tot[q, j] += ms
+	t[q, j, img, a] = ms
+	tot[q, j, "", a] += ms
 	dg[q, j, img] = d
 	if (!((img, d) in seen)) { seen[img, d] = 1; nd[img]++; dl[img, nd[img]] = d }
 }
@@ -62,28 +64,41 @@ function sortjobs(q,   i, k, tmp) {
 	}
 }
 
-function median(n, v,   i, k, tmp) {
-	if (n == 0) return ""
+function sortv(n, v,   i, k, tmp) {
 	for (i = 2; i <= n; i++) {
 		tmp = v[i]; k = i - 1
 		while (k >= 1 && v[k] + 0 > tmp + 0) { v[k + 1] = v[k]; k-- }
 		v[k + 1] = tmp
 	}
+}
+
+# Collects pull times for queue q into v (sorted) and returns the count.
+# img == "" means per-job totals (sum over images for one attempt); r == 0
+# means all rounds; attempts lo..hi inclusive.
+function collect(q, img, r, lo, hi, v,   n, rr, r0, r1, a, j) {
+	split("", v); n = 0
+	r0 = r ? r : 1; r1 = r ? r : nj[q]
+	for (rr = r0; rr <= r1 && rr <= nj[q]; rr++) {
+		j = jobs[q, rr]
+		for (a = lo; a <= hi; a++) {
+			if (img == "") { if ((q, j, "", a) in tot) v[++n] = tot[q, j, "", a] }
+			else if ((q, j, img, a) in t) v[++n] = t[q, j, img, a]
+		}
+	}
+	sortv(n, v)
+	return n
+}
+
+function med(q, img, r, lo, hi,   n, v) {
+	n = collect(q, img, r, lo, hi, v)
+	if (n == 0) return ""
 	return (n % 2) ? v[(n + 1) / 2] : (v[n / 2] + v[n / 2 + 1]) / 2
 }
 
-# Time for one round; img == "" means the per-job total.
-function cell(q, r, img,   j) {
-	if (r > nj[q]) return ""
-	j = jobs[q, r]
-	if (img == "") return ((q, j) in tot) ? tot[q, j] : ""
-	return ((q, j, img) in t) ? t[q, j, img] : ""
-}
-
-function med(q, img,   n, r, x, v) {
-	split("", v); n = 0
-	for (r = 1; r <= nj[q]; r++) { x = cell(q, r, img); if (x != "") v[++n] = x }
-	return median(n, v)
+function range(q, img, r,   n, v) {
+	n = collect(q, img, r, 1, na, v)
+	if (n == 0) return "–"
+	return sprintf("%.2f–%.2fs", v[1] / 1000, v[n] / 1000)
 }
 
 function sec(ms) { return (ms == "") ? "–" : sprintf("%.2fs", ms / 1000) }
@@ -91,13 +106,21 @@ function speedup(a, b) { return (a == "" || b == "" || a == 0) ? "–" : sprintf
 function mbps(by, ms) { return (ms == "" || ms == 0) ? "–" : sprintf("%.0f", by / 1e6 / (ms / 1000)) }
 
 function row(label, by, img,   a, b) {
-	a = med(A, img); b = med(B, img)
-	printf "| %s | %.0f MB | %s | %s | %s | %s | %s |\n", label, by / 1e6, sec(a), sec(b), speedup(a, b), mbps(by, a), mbps(by, b)
+	a = med(A, img, 0, 1, na); b = med(B, img, 0, 1, na)
+	printf "| %s | %.0f MB | %s | %s | %s |", label, by / 1e6, sec(a), sec(b), speedup(a, b)
+	if (na > 1)
+		printf " %s | %s | %s | %s |", sec(med(A, img, 0, 1, 1)), sec(med(B, img, 0, 1, 1)), sec(med(A, img, 0, 2, na)), sec(med(B, img, 0, 2, na))
+	printf " %s | %s | %s | %s |\n", range(A, img, 0), range(B, img, 0), mbps(by, a), mbps(by, b)
+}
+
+function rcell(q, r, img) {
+	if (na == 1) return sec(med(q, img, r, 1, 1))
+	return sec(med(q, img, r, 1, na)) " (" range(q, img, r) ")"
 }
 
 function roundrow(label, img,   r) {
 	printf "| %s |", label
-	for (r = 1; r <= rounds; r++) printf " %s | %s |", sec(cell(A, r, img)), sec(cell(B, r, img))
+	for (r = 1; r <= rounds; r++) printf " %s | %s |", rcell(A, r, img), rcell(B, r, img)
 	printf "\n"
 }
 
@@ -108,16 +131,25 @@ END {
 
 	print "### " title
 	print ""
-	printf "Median of %d default and %d unaccelerated runs; %s Speedup = unaccelerated ÷ default.\n", nj[A], nj[B], note
+	if (na > 1)
+		printf "Median of all pulls across %d default and %d unaccelerated runs, %d pulls of each image back to back per run. 1st = first pull of each image in a run (may miss the accelerator cache); Repeat = pulls 2–%d. Range = fastest–slowest pull. ", nj[A], nj[B], na, na
+	else
+		printf "Median of %d default and %d unaccelerated runs. ", nj[A], nj[B]
+	printf "%s Speedup = unaccelerated ÷ default.\n", note
 	print ""
-	print "| Image | Size | default | unaccelerated | Speedup | default MB/s | unaccelerated MB/s |"
-	print "|---|--:|--:|--:|--:|--:|--:|"
+	printf "| Image | Size | default | unaccelerated | Speedup |"
+	if (na > 1) printf " default 1st | unaccelerated 1st | default repeat | unaccelerated repeat |"
+	printf " default range | unaccelerated range | default MB/s | unaccelerated MB/s |\n"
+	printf "|---|--:|--:|--:|--:|"
+	if (na > 1) printf "--:|--:|--:|--:|"
+	printf "--:|--:|--:|--:|\n"
 	for (i = 1; i <= nimg; i++) row("`" imgs[i] "`", isize[imgs[i]], imgs[i])
 	row("**Total**", totsize, "")
 
 	print ""
 	print "<details><summary>Per-round times</summary>"
 	print ""
+	if (na > 1) { printf "Median of %d pulls (fastest–slowest).\n", na; print "" }
 	printf "| Image |"
 	for (r = 1; r <= rounds; r++) printf " R%d default | R%d unaccelerated |", r, r
 	printf "\n|---|"
