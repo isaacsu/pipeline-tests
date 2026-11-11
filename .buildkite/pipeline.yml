@@ -1,5 +1,5 @@
 agents:
-  queue: "default"
+  queue: "monopool"
 
 steps:
   - label: "Go Version"
