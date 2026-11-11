@@ -3,15 +3,19 @@ agents:
 
 steps:
   - label: "Go Version"
-    command: go version
-    parallelism: 200
+    command:
+      - go version
+      - sleep 5
+    parallelism: 500
     plugins:
       - docker#v5.11.0:
           image: "golang:latest"
 
   - label: "Node Version"
-    command: node --version
-    parallelism: 200
+    command:
+      - node --version
+      - sleep 5
+    parallelism: 500
     plugins:
       - docker#v5.11.0:
           image: "node:latest"
